@@ -8,4 +8,8 @@
     <string name="email">Email</string>
     <string name="password">Contraseña</string>
     <string name="login">OK</string>
+
+    <!-- CHAT -->
+    <string name="enviar">Enviar</string>
+
 </resources>
