@@ -6,6 +6,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -24,8 +25,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import cat.paucasesnoves.telehgram.gestor.GestorBBDD;
 
@@ -35,6 +47,10 @@ public class MainActivity extends AppCompatActivity {
     private EditText email;
     private EditText pass;
     private Button btnLogin;
+
+    private String emailEnvia;
+    private String passEnvia;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,16 +72,9 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Comprobamos que los datos sean correctos
                 if (compruebaDatos(email.getText().toString(), pass.getText().toString())) {
-
-                    // Prueba usando Volley
-                    /*loginUser(email.getText().toString(),pass.getText().toString());*/
-
-                    // Prueba usando métodos del pdf
-                    String mensaje = gestorBBDD.login(email.getText().toString(),pass.getText().toString());
-                    Toast.makeText(getApplicationContext(),mensaje + "", Toast.LENGTH_SHORT).show();
-                    final byte[] result = mensaje.getBytes();
-
-                    Toast.makeText(getApplicationContext(),result.length + "", Toast.LENGTH_SHORT).show();
+                    emailEnvia = email.getText().toString();
+                    passEnvia = pass.getText().toString();
+                    new RequestAsync().execute();
                 }
             }
         });
@@ -93,42 +102,35 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    // Usando Volley
-    private void loginUser(final String email, final String password){
-        String url = "https://52.44.95.114/quepassaeh/server/public/login/";
-        RequestQueue queue = Volley.newRequestQueue(this);
-        StringRequest postRequest = new StringRequest(Request.Method.POST, url,
-                new Response.Listener<String>()
-                {
-                    @Override
-                    public void onResponse(String response) {
-                        Toast.makeText(getApplicationContext(),"Hola", Toast.LENGTH_SHORT).show();
-                        // response
-                        Log.d("Response", response);
-                    }
-                },
-                new Response.ErrorListener()
-                {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
+    public class RequestAsync extends AsyncTask<String,String,String> {
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                //GET Request
+                //return RequestHandler.sendGet("https://prodevsblog.com/android_get.php");
 
-                        Toast.makeText(getApplicationContext(),"Error", Toast.LENGTH_SHORT).show();
-                        // error
-                        Log.d("Error.Response", error.toString());
-                    }
-                }
-        ) {
-            @Override
-            protected Map<String, String> getParams()
-            {
-                Map<String, String>  params = new HashMap<String, String>();
-                params.put("email", email);
-                params.put("password", password);
+                // POST Request
+                JSONObject postDataParams = new JSONObject();
+                postDataParams.put("email", emailEnvia);
+                postDataParams.put("password", passEnvia);
 
-                return params;
+                return GestorBBDD.sendPost("http://52.44.95.114/quepassaeh/server/public/login/",postDataParams);
             }
-        };
-        queue.add(postRequest);
+            catch(Exception e){
+                return new String("Exception: " + e.getMessage());
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            if(s!=null){
+                Log.d("AQUIIIIIIIIIIIIIIIIIIIIII", s);
+                Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
+            }
+        }
+
+
     }
 
 }
+
