@@ -2,10 +2,6 @@ package cat.paucasesnoves.telehgram;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,31 +10,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.lang.reflect.Type;
 
-import javax.net.ssl.HttpsURLConnection;
-
+import cat.paucasesnoves.telehgram.entidades.Dato;
+import cat.paucasesnoves.telehgram.entidades.Usuario;
 import cat.paucasesnoves.telehgram.gestor.GestorBBDD;
 
 public class MainActivity extends AppCompatActivity {
@@ -138,12 +119,34 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String s) {
             // Obtenemos respuesta de la api
             if(s!=null){
-                Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
+                try {
+                    // Cogemos el JSONObject del JSON file
+                    JSONObject obj = new JSONObject(s);
+                    // Creamos un objeto Dato para guardar la respuesta principal de la petición.
+                    Dato datos = new Dato(null, obj.getBoolean("correcta"), obj.getString("missatge"), obj.getInt("rowcount"));
+
+                    // Usamos el dato básico de correcta que nos envia el servidor,
+                    // si es true significa que la petición contiene todos los datos que hemos pedido.
+                    if (datos.isCorrecta()) {
+                        // Conseguimos la array principal que es la de dades, esta contiene la información
+                        // del usuario
+                        JSONObject descarga = obj.getJSONObject("dades");
+                        // Asignamos cada campo a nuestro objeto Usuario
+                        Usuario usuario = new Usuario(descarga.getString("codiusuari"), descarga.getString("nom"),
+                                descarga.getString("email"), descarga.getString("token"));
+                        // Le añadimos a nuestro objeto Dato la información que nos faltaba
+                        datos.setUsuario(usuario);
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Login incorrecto", Toast.LENGTH_LONG).show();
+                        // Borrar texto de los EditText
+                        email.setText("");
+                        pass.setText("");
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         }
-
-
     }
-
 }
 
