@@ -93,15 +93,27 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Comprueba los campos del login
+     * @param email
+     * @param pass
+     * @return boolean true si no hay campos vacios
+     */
     public boolean compruebaDatos(String email, String pass) {
         if (!("").equals(email.trim()) || !("").equals(pass.trim())) {
             return true;
         } else {
             // ERROR
+            Log.d("ERROR LOGIN", "Campos email o password incorrectos.");
         }
         return false;
     }
 
+    /**
+     * Creamos una clase Asincrona y la llamamos RequestAsync.
+     * Las clases asincronas se ejecutan independientemente de los otros procesos.
+     * Así que ejecutará el proceso en segundo plano.
+     */
     public class RequestAsync extends AsyncTask<String,String,String> {
         @Override
         protected String doInBackground(String... strings) {
@@ -109,22 +121,23 @@ public class MainActivity extends AppCompatActivity {
                 //GET Request
                 //return RequestHandler.sendGet("https://prodevsblog.com/android_get.php");
 
-                // POST Request
-                JSONObject postDataParams = new JSONObject();
-                postDataParams.put("email", emailEnvia);
-                postDataParams.put("password", passEnvia);
+                // POST para el login
+                JSONObject parametros = new JSONObject();
+                // Añadimos los parámetros a un JSONObject
+                parametros.put("email", emailEnvia);
+                parametros.put("password", passEnvia);
 
-                return GestorBBDD.sendPost("http://52.44.95.114/quepassaeh/server/public/login/",postDataParams);
+                return GestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/login/", parametros);
             }
             catch(Exception e){
-                return new String("Exception: " + e.getMessage());
+                return "Excepción: " + e.getMessage();
             }
         }
 
         @Override
         protected void onPostExecute(String s) {
+            // Obtenemos respuesta de la api
             if(s!=null){
-                Log.d("AQUIIIIIIIIIIIIIIIIIIIIII", s);
                 Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
             }
         }

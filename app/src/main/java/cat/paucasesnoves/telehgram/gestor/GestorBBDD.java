@@ -12,33 +12,56 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class GestorBBDD extends AppCompatActivity {
 
-    private static String encodeParams(JSONObject params) throws Exception {
-        StringBuilder result = new StringBuilder();
-        boolean first = true;
-        Iterator<String> itr = params.keys();
-        while(itr.hasNext()){
-            String key= itr.next();
-            Object value = params.get(key);
-            if (first)
-                first = false;
-            else
-                result.append("&");
+    /**
+     * Método para codificar los parámetros que necesitaremos para las peticiones
+     * @param parametros para montar la cadena que necesitará la petición POST
+     * @return la cadena concatenada correctamente
+     * @throws Exception
+     */
+    private static String codificarParametros(JSONObject parametros) throws Exception {
+        StringBuilder resultado = new StringBuilder();
 
-            result.append(URLEncoder.encode(key, "UTF-8"));
-            result.append("=");
-            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
+        //Boolean para controlar si es el primer parametro
+        boolean primero = true;
+
+        // Recorremos todos los parámetros
+        Iterator<String> itr = parametros.keys();
+        while(itr.hasNext()){
+            String key = itr.next();
+            Object valor = parametros.get(key);
+
+            // Si es el primero no le añadimos nada,
+            // sino le añadimos un & para concatenar correctamente
+            if (primero) {
+                primero = false;
+            } else{
+                resultado.append("&");
+            }
+
+            // Montamos la cadena correctamente
+            resultado.append(URLEncoder.encode(key, "UTF-8"));
+            resultado.append("=");
+            resultado.append(URLEncoder.encode(valor.toString(), "UTF-8"));
         }
-        return result.toString();
+        return resultado.toString();
     }
 
-    public static String sendPost(String r_url , JSONObject postDataParams) throws Exception {
-        URL url = new URL(r_url);
+    /**
+     * Este método sirve para hacer todas las peticiones POST
+     * @param link url de la api para hacer la petición
+     * @param parametros parámetros necesarios para la petición
+     * @return respuesta de la api
+     * @throws Exception
+     */
+    public static String enviarPost(String link , JSONObject parametros) throws Exception {
+        URL url = new URL(link);
 
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setReadTimeout(20000);
@@ -48,22 +71,23 @@ public class GestorBBDD extends AppCompatActivity {
         conn.setDoOutput(true);
 
         OutputStream os = conn.getOutputStream();
-        BufferedWriter writer = new BufferedWriter( new OutputStreamWriter(os, "UTF-8"));
-        writer.write(encodeParams(postDataParams));
+        BufferedWriter writer = new BufferedWriter( new OutputStreamWriter(os, StandardCharsets.UTF_8));
+        writer.write(codificarParametros(parametros));
         writer.flush();
         writer.close();
         os.close();
 
-        int responseCode=conn.getResponseCode();
+        int responseCode = conn.getResponseCode();
         if (responseCode == HttpsURLConnection.HTTP_OK) {
+            BufferedReader in = new BufferedReader( new InputStreamReader(conn.getInputStream()));
+            StringBuffer sb = new StringBuffer();
+            String texto;
 
-            BufferedReader in=new BufferedReader( new InputStreamReader(conn.getInputStream()));
-            StringBuffer sb = new StringBuffer("");
-            String line="";
-            while((line = in.readLine()) != null) {
-                sb.append(line);
+            while((texto = in.readLine()) != null) {
+                sb.append(texto);
                 break;
             }
+
             in.close();
             return sb.toString();
         }
