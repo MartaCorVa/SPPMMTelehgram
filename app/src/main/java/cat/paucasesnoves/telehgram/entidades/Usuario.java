@@ -6,6 +6,7 @@ public class Usuario {
     private String nombre;
     private String email;
     private String token;
+    private String password;
 
     public Usuario(String codigoUsuario, String nombre, String email, String token) {
         this.codigoUsuario = codigoUsuario;
@@ -47,6 +48,14 @@ public class Usuario {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     @Override

@@ -5,4 +5,5 @@
     <color name="colorAccent"> #474c47 </color>
     <color name="negro"> #000000 </color>
     <color name="gris"> #5a5f5a </color>
+    <color name="grisAlpha">#30000000</color>
 </resources>

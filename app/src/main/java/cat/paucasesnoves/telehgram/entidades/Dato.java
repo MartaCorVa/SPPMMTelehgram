@@ -2,24 +2,24 @@ package cat.paucasesnoves.telehgram.entidades;
 
 public class Dato {
 
-    private Usuario usuario;
+    private Object objeto;
     private boolean correcta;
     private String mensaje;
     private int rowCount;
 
-    public Dato(Usuario usuario, boolean correcta, String mensaje, int rowCount) {
-        this.usuario = usuario;
+    public Dato(Object objeto, boolean correcta, String mensaje, int rowCount) {
+        this.objeto = objeto;
         this.correcta = correcta;
         this.mensaje = mensaje;
         this.rowCount = rowCount;
     }
 
-    public Usuario getUsuario() {
-        return usuario;
+    public Object getObjeto() {
+        return objeto;
     }
 
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
+    public void setObjeto(Object objeto) {
+        this.objeto = objeto;
     }
 
     public boolean isCorrecta() {
@@ -49,7 +49,7 @@ public class Dato {
     @Override
     public String toString() {
         return "Datos{" +
-                "usuario=" + usuario +
+                "objeto=" + objeto +
                 ", correcta=" + correcta +
                 ", mensaje='" + mensaje + '\'' +
                 ", rowCount=" + rowCount +

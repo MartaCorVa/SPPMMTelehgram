@@ -29,15 +29,8 @@
         android:layout_marginTop="150dp"
         android:layout_marginLeft="50dp"
         android:layout_marginRight="50dp"
+        android:background="@color/grisAlpha"
         >
-
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:adjustViewBounds="true"
-            android:scaleType="centerCrop"
-            android:alpha="0.3"
-            android:src="@color/gris" />
 
         <TextView
             android:id="@+id/login_email_texto"

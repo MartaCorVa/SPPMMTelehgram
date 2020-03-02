@@ -1,11 +1,10 @@
 package cat.paucasesnoves.telehgram.gestor;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -17,10 +16,15 @@ import java.util.Iterator;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class GestorBBDD extends AppCompatActivity {
+import cat.paucasesnoves.telehgram.entidades.Usuario;
+
+import static android.content.Context.MODE_PRIVATE;
+
+public class GestorBBDD {
 
     /**
      * Método para codificar los parámetros que necesitaremos para las peticiones
+     *
      * @param parametros para montar la cadena que necesitará la petición POST
      * @return la cadena concatenada correctamente
      * @throws Exception
@@ -33,7 +37,7 @@ public class GestorBBDD extends AppCompatActivity {
 
         // Recorremos todos los parámetros
         Iterator<String> itr = parametros.keys();
-        while(itr.hasNext()){
+        while (itr.hasNext()) {
             String key = itr.next();
             Object valor = parametros.get(key);
 
@@ -41,7 +45,7 @@ public class GestorBBDD extends AppCompatActivity {
             // sino le añadimos un & para concatenar correctamente
             if (primero) {
                 primero = false;
-            } else{
+            } else {
                 resultado.append("&");
             }
 
@@ -55,12 +59,13 @@ public class GestorBBDD extends AppCompatActivity {
 
     /**
      * Este método sirve para hacer todas las peticiones POST
-     * @param link url de la api para hacer la petición
+     *
+     * @param link       url de la api para hacer la petición
      * @param parametros parámetros necesarios para la petición
      * @return respuesta de la api
      * @throws Exception
      */
-    public static String enviarPost(String link , JSONObject parametros) throws Exception {
+    public static String enviarPost(String link, JSONObject parametros) throws Exception {
         URL url = new URL(link);
 
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -71,7 +76,7 @@ public class GestorBBDD extends AppCompatActivity {
         conn.setDoOutput(true);
 
         OutputStream os = conn.getOutputStream();
-        BufferedWriter writer = new BufferedWriter( new OutputStreamWriter(os, StandardCharsets.UTF_8));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
         writer.write(codificarParametros(parametros));
         writer.flush();
         writer.close();
@@ -79,11 +84,11 @@ public class GestorBBDD extends AppCompatActivity {
 
         int responseCode = conn.getResponseCode();
         if (responseCode == HttpsURLConnection.HTTP_OK) {
-            BufferedReader in = new BufferedReader( new InputStreamReader(conn.getInputStream()));
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             StringBuffer sb = new StringBuffer();
             String texto;
 
-            while((texto = in.readLine()) != null) {
+            while ((texto = in.readLine()) != null) {
                 sb.append(texto);
                 break;
             }
@@ -92,6 +97,28 @@ public class GestorBBDD extends AppCompatActivity {
             return sb.toString();
         }
         return null;
+    }
+
+    public static String enviarGet(String url) throws IOException {
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+        int responseCode = con.getResponseCode();
+        System.out.println("Response Code :: " + responseCode);
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+            return response.toString();
+        } else {
+            return "";
+        }
+
     }
 
 }

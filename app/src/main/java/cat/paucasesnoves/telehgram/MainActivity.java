@@ -2,6 +2,8 @@ package cat.paucasesnoves.telehgram;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -56,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
                     emailEnvia = email.getText().toString();
                     passEnvia = pass.getText().toString();
                     new RequestAsync().execute();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Login incorrecto", Toast.LENGTH_LONG).show();
                 }
             }
         });
@@ -134,8 +138,17 @@ public class MainActivity extends AppCompatActivity {
                         // Asignamos cada campo a nuestro objeto Usuario
                         Usuario usuario = new Usuario(descarga.getString("codiusuari"), descarga.getString("nom"),
                                 descarga.getString("email"), descarga.getString("token"));
+                        usuario.setPassword(passEnvia);
                         // Le añadimos a nuestro objeto Dato la información que nos faltaba
-                        datos.setUsuario(usuario);
+                        datos.setObjeto(usuario);
+
+                        System.out.println(usuario);
+
+                        // Guardamos los datos con Shared Preferences
+                        guardarDatosLogin(usuario);
+
+                        // Redirigimos a la activity de chat
+                        startActivity(new Intent(getApplicationContext(), ChatActivity.class));
                     } else {
                         Toast.makeText(getApplicationContext(), "Login incorrecto", Toast.LENGTH_LONG).show();
                         // Borrar texto de los EditText
@@ -147,6 +160,25 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    /**
+     * Método para guardar todos los datos de un usuario en un xml
+     * @param usuario
+     */
+    public void guardarDatosLogin(Usuario usuario) {
+        SharedPreferences preferences = getSharedPreferences("datos_login", MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("codigo", usuario.getCodigoUsuario());
+        editor.commit();
+        editor.putString("nombre", usuario.getNombre());
+        editor.commit();
+        editor.putString("email", usuario.getEmail());
+        editor.commit();
+        editor.putString("token", usuario.getToken());
+        editor.commit();
+        editor.putString("password", usuario.getPassword());
+        editor.apply();
     }
 }
 
