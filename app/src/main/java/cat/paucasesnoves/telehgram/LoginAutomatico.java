@@ -40,7 +40,7 @@ public class LoginAutomatico extends AppCompatActivity {
         usuario = gson.fromJson(json, type);
 
         if (usuario == null) {
-            startActivity(new Intent(this, MainActivity.class));
+            startActivity(new Intent(this, LoginActivity.class));
         } else {
             new RequestAsync().execute();
         }
@@ -95,7 +95,7 @@ public class LoginAutomatico extends AppCompatActivity {
                         startActivity(new Intent(getApplicationContext(), ChatActivity.class));
                     } else {
                         Toast.makeText(getApplicationContext(), "Error al intentar iniciar sesión.", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                        startActivity(new Intent(getApplicationContext(), LoginActivity.class));
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();

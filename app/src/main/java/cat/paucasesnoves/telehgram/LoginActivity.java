@@ -26,7 +26,7 @@ import cat.paucasesnoves.telehgram.entidades.Dato;
 import cat.paucasesnoves.telehgram.entidades.Usuario;
 import cat.paucasesnoves.telehgram.gestor.GestorBBDD;
 
-public class MainActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity {
 
     private GestorBBDD gestorBBDD = new GestorBBDD();
     private EditText email;

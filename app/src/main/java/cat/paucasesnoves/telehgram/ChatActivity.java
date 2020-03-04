@@ -1,8 +1,10 @@
 package cat.paucasesnoves.telehgram;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -109,11 +111,18 @@ public class ChatActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.cerrar_sesion:
-                // newGame();
+                Log.d("Cerrar sesion", "Holasss");
+                borrarShared();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    public void borrarShared() {
+        this.getSharedPreferences("datos_login", 0).edit().clear().apply();
+        startActivity(new Intent(this, LoginActivity.class));
+        Log.d("Cerrar sesion", "Shared eliminado.");
     }
 
 }
