@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -63,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
     }
 
     /**
@@ -103,9 +106,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(String... strings) {
             try {
-                //GET Request
-                //return RequestHandler.sendGet("https://prodevsblog.com/android_get.php");
-
                 // POST para el login
                 JSONObject parametros = new JSONObject();
                 // Añadimos los parámetros a un JSONObject
@@ -151,6 +151,7 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(new Intent(getApplicationContext(), ChatActivity.class));
                     } else {
                         Toast.makeText(getApplicationContext(), "Login incorrecto", Toast.LENGTH_LONG).show();
+                        Log.d("MSG SERVIDOR", obj.getString("missatge"));
                         // Borrar texto de los EditText
                         email.setText("");
                         pass.setText("");
@@ -167,18 +168,14 @@ public class MainActivity extends AppCompatActivity {
      * @param usuario
      */
     public void guardarDatosLogin(Usuario usuario) {
-        SharedPreferences preferences = getSharedPreferences("datos_login", MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("codigo", usuario.getCodigoUsuario());
-        editor.commit();
-        editor.putString("nombre", usuario.getNombre());
-        editor.commit();
-        editor.putString("email", usuario.getEmail());
-        editor.commit();
-        editor.putString("token", usuario.getToken());
-        editor.commit();
-        editor.putString("password", usuario.getPassword());
+        SharedPreferences sharedPreferences = getSharedPreferences("datos_login", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        Gson gson = new Gson();
+        String json = gson.toJson(usuario);
+        editor.putString("usuario", json);
         editor.apply();
     }
+
 }
 
