@@ -31,7 +31,7 @@
 
 
     <ImageButton
-        android:id="@+id/boton_login"
+        android:id="@+id/boton_mensaje"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_alignParentBottom="true"

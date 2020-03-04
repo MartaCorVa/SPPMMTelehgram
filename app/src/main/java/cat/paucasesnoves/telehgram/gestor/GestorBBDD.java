@@ -1,5 +1,14 @@
 package cat.paucasesnoves.telehgram.gestor;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.util.Log;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -8,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -16,11 +26,13 @@ import java.util.Iterator;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import cat.paucasesnoves.telehgram.LoginActivity;
+import cat.paucasesnoves.telehgram.LoginAutomatico;
 import cat.paucasesnoves.telehgram.entidades.Usuario;
 
 import static android.content.Context.MODE_PRIVATE;
 
-public class GestorBBDD {
+public class GestorBBDD extends AppCompatActivity {
 
     /**
      * Método para codificar los parámetros que necesitaremos para las peticiones
@@ -29,7 +41,7 @@ public class GestorBBDD {
      * @return la cadena concatenada correctamente
      * @throws Exception
      */
-    private static String codificarParametros(JSONObject parametros) throws Exception {
+    private String codificarParametros(JSONObject parametros) throws Exception {
         StringBuilder resultado = new StringBuilder();
 
         //Boolean para controlar si es el primer parametro
@@ -65,7 +77,7 @@ public class GestorBBDD {
      * @return respuesta de la api
      * @throws Exception
      */
-    public static String enviarPost(String link, JSONObject parametros) throws Exception {
+    public String enviarPost(String link, JSONObject parametros) throws Exception {
         URL url = new URL(link);
 
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -99,7 +111,7 @@ public class GestorBBDD {
         return null;
     }
 
-    public static String enviarGet(String url) throws IOException {
+    public String enviarGet(String url) throws IOException {
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
         con.setRequestMethod("GET");

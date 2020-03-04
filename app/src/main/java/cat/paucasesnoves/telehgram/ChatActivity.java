@@ -8,17 +8,25 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import cat.paucasesnoves.telehgram.entidades.Dato;
 import cat.paucasesnoves.telehgram.entidades.Mensaje;
@@ -28,14 +36,34 @@ import cat.paucasesnoves.telehgram.utilidades.CustomAdapter;
 
 public class ChatActivity extends AppCompatActivity {
 
+    private GestorBBDD gestorBBDD;
     private ArrayList<Mensaje> listaMensajes = new ArrayList<>();
+    private EditText textoMensaje;
+    private ImageButton btnEnviar;
+    private String mensajeEnviar;
+    private String opcion = "";
+    private CustomAdapter adapter;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chat_layout);
 
-        new RequestAsync().execute();
+        gestorBBDD = new GestorBBDD();
+
+        textoMensaje = findViewById(R.id.chat_mensaje);
+        btnEnviar = findViewById(R.id.boton_mensaje);
+
+        btnEnviar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mensajeEnviar = textoMensaje.getText().toString();
+                textoMensaje.setText("");
+                new RequestAsync().execute("enviar");
+            }
+        });
+
+        new RequestAsync().execute("recibir");
     }
 
     /**
@@ -47,8 +75,27 @@ public class ChatActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(String... strings) {
             try {
-                //GET Request
-                return GestorBBDD.enviarGet("http://52.44.95.114/quepassaeh/server/public/provamissatge/");
+                for (String s : strings) {
+                    opcion = s;
+                }
+                Log.d("CHAT Opcion", opcion);
+                switch (opcion) {
+                    case "enviar":
+                        // Obtener el usuario que ha iniciado sesión
+                        Usuario usuario = obtenUsuarioShared();
+                        // POST para el login
+                        JSONObject parametros = new JSONObject();
+                        // Añadimos los parámetros a un JSONObject
+                        parametros.put("msg", mensajeEnviar);
+                        parametros.put("codiusuari", usuario.getCodigoUsuario());
+
+                        Log.d("CHAT", "Enviando mensajes.");
+                        return gestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/provamissatge/", parametros);
+                    case "recibir":
+                    default:
+                        Log.d("CHAT", "Recibiendo mensajes.");
+                        return gestorBBDD.enviarGet("http://52.44.95.114/quepassaeh/server/public/provamissatge/");
+                }
             } catch (Exception e) {
                 return "Excepción: " + e.getMessage();
             }
@@ -57,7 +104,7 @@ public class ChatActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String s) {
             // Obtenemos respuesta de la api
-            if (s != null) {
+            if (s != null && !("enviar").equals(opcion)) {
                 try {
                     // get JSONObject from JSON file
                     JSONObject obj = new JSONObject(s);
@@ -81,11 +128,19 @@ public class ChatActivity extends AppCompatActivity {
                         }
 
                         ListView lista = findViewById(R.id.lista);
-                        CustomAdapter adapter = new CustomAdapter(getApplicationContext(), listaMensajes);
+                        adapter = new CustomAdapter(getApplicationContext(), listaMensajes);
                         lista.setAdapter(adapter);
 
                     } else {
-                        Toast.makeText(getApplicationContext(), "No hay mensajes", Toast.LENGTH_LONG).show();
+                        if (("recibir").equals(opcion)){
+                            Toast.makeText(getApplicationContext(), "No hay mensajes", Toast.LENGTH_LONG).show();
+                        } else {
+                            listaMensajes.clear();
+                            new RequestAsync().execute("recibir");
+                            adapter.notifyDataSetChanged();
+                            /*actualizacionesNuevas.addAll(actualizacionesNuevas);
+                            actualizacionAdapter.notifyDataSetChanged();*/
+                        }
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -125,5 +180,12 @@ public class ChatActivity extends AppCompatActivity {
         Log.d("Cerrar sesion", "Shared eliminado.");
     }
 
+    public Usuario obtenUsuarioShared() {
+        SharedPreferences sharedPreferences = getSharedPreferences("datos_login", MODE_PRIVATE);
+        Gson gson = new Gson();
+        String json = sharedPreferences.getString("usuario", null);
+        Type type = new TypeToken<Usuario>() {}.getType();
+        return gson.fromJson(json, type);
+    }
 }
 

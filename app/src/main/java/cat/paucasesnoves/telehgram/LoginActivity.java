@@ -112,7 +112,7 @@ public class LoginActivity extends AppCompatActivity {
                 parametros.put("email", emailEnvia);
                 parametros.put("password", passEnvia);
 
-                return GestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/login/", parametros);
+                return gestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/login/", parametros);
             }
             catch(Exception e){
                 return "Excepción: " + e.getMessage();
@@ -176,6 +176,5 @@ public class LoginActivity extends AppCompatActivity {
         editor.putString("usuario", json);
         editor.apply();
     }
-
 }
 

@@ -23,12 +23,14 @@ import cat.paucasesnoves.telehgram.gestor.GestorBBDD;
 
 public class LoginAutomatico extends AppCompatActivity {
 
+    private GestorBBDD gestorBBDD;
     private Usuario usuario;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        gestorBBDD = new GestorBBDD();
         obtenDatosLogin();
     }
 
@@ -61,7 +63,7 @@ public class LoginAutomatico extends AppCompatActivity {
                 parametros.put("email", usuario.getEmail());
                 parametros.put("password", usuario.getPassword());
 
-                return GestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/login/", parametros);
+                return gestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/login/", parametros);
             }
             catch(Exception e){
                 return "Excepción: " + e.getMessage();
