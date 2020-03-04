@@ -43,6 +43,7 @@ public class ChatActivity extends AppCompatActivity {
     private String mensajeEnviar;
     private String opcion = "";
     private CustomAdapter adapter;
+    private Runnable hilo;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -92,6 +93,7 @@ public class ChatActivity extends AppCompatActivity {
                         Log.d("CHAT", "Enviando mensajes.");
                         return gestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/provamissatge/", parametros);
                     case "recibir":
+                    case "recibir_enviar":
                     default:
                         Log.d("CHAT", "Recibiendo mensajes.");
                         return gestorBBDD.enviarGet("http://52.44.95.114/quepassaeh/server/public/provamissatge/");
@@ -105,53 +107,85 @@ public class ChatActivity extends AppCompatActivity {
         protected void onPostExecute(String s) {
             // Obtenemos respuesta de la api
             if (s != null && !("enviar").equals(opcion)) {
-                try {
-                    // get JSONObject from JSON file
-                    JSONObject obj = new JSONObject(s);
+                if (("recibir").equals(opcion)) {
+                    try {
+                        // get JSONObject from JSON file
+                        JSONObject obj = new JSONObject(s);
 
-                    // fetch JSONArray named users
-                    JSONArray datos = obj.getJSONArray("dades");
+                        // fetch JSONArray named users
+                        JSONArray datos = obj.getJSONArray("dades");
 
-                    Dato dato = new Dato(null, obj.getBoolean("correcta"), obj.getString("missatge"), obj.getInt("rowcount"));
+                        Dato dato = new Dato(null, obj.getBoolean("correcta"), obj.getString("missatge"), obj.getInt("rowcount"));
 
-                    if (dato.isCorrecta()) {
-                        // implement for loop for getting users list data
-                        for (int i = 0; i < datos.length(); i++) {
-                            // create a JSONObject for fetching single user data
-                            JSONObject mensaje = datos.getJSONObject(i);
+                        if (dato.isCorrecta()) {
+                            // implement for loop for getting users list data
+                            for (int i = 0; i < datos.length(); i++) {
+                                // create a JSONObject for fetching single user data
+                                JSONObject mensaje = datos.getJSONObject(i);
 
-                            // fetch email and name and store it in arraylist
-                            listaMensajes.add(new Mensaje(mensaje.getString("codimissatge"), mensaje.getString("msg"),
-                                    mensaje.getString("datahora"), mensaje.getString("codiusuari"),
-                                    mensaje.getString("nom"), mensaje.getString("foto")));
+                                // fetch email and name and store it in arraylist
+                                listaMensajes.add(new Mensaje(mensaje.getString("codimissatge"), mensaje.getString("msg"),
+                                        mensaje.getString("datahora"), mensaje.getString("codiusuari"),
+                                        mensaje.getString("nom"), mensaje.getString("foto")));
 
-                        }
+                            }
 
-                        ListView lista = findViewById(R.id.lista);
-                        adapter = new CustomAdapter(getApplicationContext(), listaMensajes);
-                        lista.setAdapter(adapter);
+                            ListView lista = findViewById(R.id.lista);
+                            adapter = new CustomAdapter(getApplicationContext(), listaMensajes);
+                            lista.setAdapter(adapter);
 
-                    } else {
-                        if (("recibir").equals(opcion)){
-                            Toast.makeText(getApplicationContext(), "No hay mensajes", Toast.LENGTH_LONG).show();
                         } else {
-                            listaMensajes.clear();
-                            new RequestAsync().execute("recibir");
-                            adapter.notifyDataSetChanged();
-                            /*actualizacionesNuevas.addAll(actualizacionesNuevas);
-                            actualizacionAdapter.notifyDataSetChanged();*/
+                            if (("recibir").equals(opcion)){
+                                Toast.makeText(getApplicationContext(), "No hay mensajes", Toast.LENGTH_LONG).show();
+                            } else {
+                                new RequestAsync().execute("recibir_enviar");
+                            }
                         }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+                } else {
+                    try {
+                        // ArrayList auxiliar
+                        ArrayList<Mensaje> auxiliar = new ArrayList<>();
 
-        public Usuario recuperarUsuarioSP() {
-            SharedPreferences sharedPreferences = getSharedPreferences("datos_login", MODE_PRIVATE);
-            return new Usuario(sharedPreferences.getString("codigo", null), sharedPreferences.getString("nombre", null),
-                    sharedPreferences.getString("email", null), sharedPreferences.getString("token", null));
+                        // get JSONObject from JSON file
+                        JSONObject obj = new JSONObject(s);
+
+                        // fetch JSONArray named users
+                        JSONArray datos = obj.getJSONArray("dades");
+
+                        Dato dato = new Dato(null, obj.getBoolean("correcta"), obj.getString("missatge"), obj.getInt("rowcount"));
+
+                        if (dato.isCorrecta()) {
+                            // implement for loop for getting users list data
+                            for (int i = 0; i < datos.length(); i++) {
+                                // create a JSONObject for fetching single user data
+                                JSONObject mensaje = datos.getJSONObject(i);
+
+                                // fetch email and name and store it in arraylist
+                                auxiliar.add(new Mensaje(mensaje.getString("codimissatge"), mensaje.getString("msg"),
+                                        mensaje.getString("datahora"), mensaje.getString("codiusuari"),
+                                        mensaje.getString("nom"), mensaje.getString("foto")));
+
+                            }
+
+                            listaMensajes.clear();
+                            listaMensajes.addAll(auxiliar);
+                            adapter.notifyDataSetChanged();
+                        } else {
+                            if (("recibir").equals(opcion)){
+                                Toast.makeText(getApplicationContext(), "No hay mensajes", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                listaMensajes.clear();
+                new RequestAsync().execute("recibir_enviar");
+            }
         }
     }
 
