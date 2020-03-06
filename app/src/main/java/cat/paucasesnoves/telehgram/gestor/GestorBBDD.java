@@ -1,13 +1,6 @@
 package cat.paucasesnoves.telehgram.gestor;
 
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.util.Log;
-
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONObject;
 
@@ -17,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -25,12 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 import javax.net.ssl.HttpsURLConnection;
-
-import cat.paucasesnoves.telehgram.LoginActivity;
-import cat.paucasesnoves.telehgram.LoginAutomatico;
-import cat.paucasesnoves.telehgram.entidades.Usuario;
-
-import static android.content.Context.MODE_PRIVATE;
 
 public class GestorBBDD extends AppCompatActivity {
 
@@ -77,7 +63,73 @@ public class GestorBBDD extends AppCompatActivity {
      * @return respuesta de la api
      * @throws Exception
      */
-    public String enviarPost(String link, JSONObject parametros) throws Exception {
+    public String enviarPost(String link, JSONObject parametros, String token) throws Exception {
+        URL url = new URL(link);
+
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setReadTimeout(20000);
+        conn.setConnectTimeout(20000);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Authorization", token);
+        conn.setDoInput(true);
+        conn.setDoOutput(true);
+
+        OutputStream os = conn.getOutputStream();
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
+        writer.write(codificarParametros(parametros));
+        writer.flush();
+        writer.close();
+        os.close();
+
+        int responseCode = conn.getResponseCode();
+        if (responseCode == HttpsURLConnection.HTTP_OK) {
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuffer sb = new StringBuffer();
+            String texto;
+
+            while ((texto = in.readLine()) != null) {
+                sb.append(texto);
+                break;
+            }
+
+            in.close();
+            return sb.toString();
+        }
+        return null;
+    }
+
+    public String enviarGet(String url, String token) throws IOException {
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+        con.setRequestProperty("Authorization", token);
+        int responseCode = con.getResponseCode();
+        System.out.println("Response Code :: " + responseCode);
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+            return response.toString();
+        } else {
+            return "";
+        }
+
+    }
+
+    /**
+     * Este método sirve para hacer todas las peticiones POST
+     *
+     * @param link       url de la api para hacer la petición
+     * @param parametros parámetros necesarios para la petición
+     * @return respuesta de la api
+     * @throws Exception
+     */
+    public String loguear(String link, JSONObject parametros) throws Exception {
         URL url = new URL(link);
 
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -110,27 +162,4 @@ public class GestorBBDD extends AppCompatActivity {
         }
         return null;
     }
-
-    public String enviarGet(String url) throws IOException {
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-        con.setRequestMethod("GET");
-        int responseCode = con.getResponseCode();
-        System.out.println("Response Code :: " + responseCode);
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuffer response = new StringBuffer();
-
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-            return response.toString();
-        } else {
-            return "";
-        }
-
-    }
-
 }

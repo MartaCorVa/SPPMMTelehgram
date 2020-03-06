@@ -11,7 +11,7 @@
         android:src="@drawable/background_login" />
 
     <ListView
-        android:id="@+id/lista"
+        android:id="@+id/listaOffline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
@@ -19,28 +19,6 @@
         android:layout_marginBottom="50dp"
         android:stackFromBottom="true"
         android:transcriptMode="alwaysScroll"
-        />
-
-    <EditText
-        android:id="@+id/chat_mensaje"
-        android:layout_width="345dp"
-        android:layout_height="40dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginBottom="5dp"
-        android:layout_alignParentBottom="true"
-        android:background="@color/grisAlpha"
-        />
-
-
-    <ImageButton
-        android:id="@+id/boton_mensaje"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@id/chat_mensaje"
-        android:layout_marginTop="20dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/icon_mensaje"
         />
 
 </RelativeLayout>

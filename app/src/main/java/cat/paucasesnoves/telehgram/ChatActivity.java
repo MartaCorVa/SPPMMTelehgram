@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -31,6 +32,7 @@ import java.util.Arrays;
 import cat.paucasesnoves.telehgram.entidades.Dato;
 import cat.paucasesnoves.telehgram.entidades.Mensaje;
 import cat.paucasesnoves.telehgram.entidades.Usuario;
+import cat.paucasesnoves.telehgram.gestor.DBInterface;
 import cat.paucasesnoves.telehgram.gestor.GestorBBDD;
 import cat.paucasesnoves.telehgram.utilidades.CustomAdapter;
 
@@ -43,7 +45,7 @@ public class ChatActivity extends AppCompatActivity {
     private String mensajeEnviar;
     private String opcion = "";
     private CustomAdapter adapter;
-    private Runnable hilo;
+    private DBInterface bd;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -65,6 +67,17 @@ public class ChatActivity extends AppCompatActivity {
         });
 
         new RequestAsync().execute("recibir");
+
+        // Recargar mensajes cada 5 segundos y guardarlos en la BBDD
+        final Handler handler = new Handler();
+
+        final Runnable r = new Runnable() {
+            public void run() {
+                new RequestAsync().execute("actualiza_mensajes");
+                handler.postDelayed(this, 5000);
+            }
+        };
+        handler.postDelayed(r, 5000);
     }
 
     /**
@@ -79,11 +92,10 @@ public class ChatActivity extends AppCompatActivity {
                 for (String s : strings) {
                     opcion = s;
                 }
-                Log.d("CHAT Opcion", opcion);
+                // Obtener el usuario que ha iniciado sesión
+                Usuario usuario = obtenUsuarioShared();
                 switch (opcion) {
                     case "enviar":
-                        // Obtener el usuario que ha iniciado sesión
-                        Usuario usuario = obtenUsuarioShared();
                         // POST para el login
                         JSONObject parametros = new JSONObject();
                         // Añadimos los parámetros a un JSONObject
@@ -91,12 +103,14 @@ public class ChatActivity extends AppCompatActivity {
                         parametros.put("codiusuari", usuario.getCodigoUsuario());
 
                         Log.d("CHAT", "Enviando mensajes.");
-                        return gestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/provamissatge/", parametros);
+                        return gestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/missatge/", parametros, usuario.getToken());
+                    case "actualiza_mensajes":
+                        return gestorBBDD.enviarGet("http://52.44.95.114/quepassaeh/server/public/missatge/", usuario.getToken());
+                    case "actualiza_lista":
                     case "recibir":
-                    case "recibir_enviar":
                     default:
                         Log.d("CHAT", "Recibiendo mensajes.");
-                        return gestorBBDD.enviarGet("http://52.44.95.114/quepassaeh/server/public/provamissatge/");
+                        return gestorBBDD.enviarGet("http://52.44.95.114/quepassaeh/server/public/missatge/", usuario.getToken());
                 }
             } catch (Exception e) {
                 return "Excepción: " + e.getMessage();
@@ -106,86 +120,123 @@ public class ChatActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String s) {
             // Obtenemos respuesta de la api
-            if (s != null && !("enviar").equals(opcion)) {
-                if (("recibir").equals(opcion)) {
-                    try {
-                        // get JSONObject from JSON file
-                        JSONObject obj = new JSONObject(s);
-
-                        // fetch JSONArray named users
-                        JSONArray datos = obj.getJSONArray("dades");
-
-                        Dato dato = new Dato(null, obj.getBoolean("correcta"), obj.getString("missatge"), obj.getInt("rowcount"));
-
-                        if (dato.isCorrecta()) {
-                            // implement for loop for getting users list data
-                            for (int i = 0; i < datos.length(); i++) {
-                                // create a JSONObject for fetching single user data
-                                JSONObject mensaje = datos.getJSONObject(i);
-
-                                // fetch email and name and store it in arraylist
-                                listaMensajes.add(new Mensaje(mensaje.getString("codimissatge"), mensaje.getString("msg"),
-                                        mensaje.getString("datahora"), mensaje.getString("codiusuari"),
-                                        mensaje.getString("nom"), mensaje.getString("foto")));
-
-                            }
-
-                            ListView lista = findViewById(R.id.lista);
-                            adapter = new CustomAdapter(getApplicationContext(), listaMensajes);
-                            lista.setAdapter(adapter);
-
-                        } else {
-                            if (("recibir").equals(opcion)){
-                                Toast.makeText(getApplicationContext(), "No hay mensajes", Toast.LENGTH_LONG).show();
-                            } else {
-                                new RequestAsync().execute("recibir_enviar");
-                            }
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    try {
-                        // ArrayList auxiliar
-                        ArrayList<Mensaje> auxiliar = new ArrayList<>();
-
-                        // get JSONObject from JSON file
-                        JSONObject obj = new JSONObject(s);
-
-                        // fetch JSONArray named users
-                        JSONArray datos = obj.getJSONArray("dades");
-
-                        Dato dato = new Dato(null, obj.getBoolean("correcta"), obj.getString("missatge"), obj.getInt("rowcount"));
-
-                        if (dato.isCorrecta()) {
-                            // implement for loop for getting users list data
-                            for (int i = 0; i < datos.length(); i++) {
-                                // create a JSONObject for fetching single user data
-                                JSONObject mensaje = datos.getJSONObject(i);
-
-                                // fetch email and name and store it in arraylist
-                                auxiliar.add(new Mensaje(mensaje.getString("codimissatge"), mensaje.getString("msg"),
-                                        mensaje.getString("datahora"), mensaje.getString("codiusuari"),
-                                        mensaje.getString("nom"), mensaje.getString("foto")));
-
-                            }
-
-                            listaMensajes.clear();
-                            listaMensajes.addAll(auxiliar);
-                            adapter.notifyDataSetChanged();
-                        } else {
-                            if (("recibir").equals(opcion)){
-                                Toast.makeText(getApplicationContext(), "No hay mensajes", Toast.LENGTH_LONG).show();
-                            }
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+            if (s != null) {
+                switch (opcion) {
+                    case "enviar":
+                        Log.d("CHAT", "Mensaje enviado.");
+                        new RequestAsync().execute("recibir");
+                    case "recibir":
+                        cargarMensajesRecibidos(s);
+                    case "actualiza_mensajes":
+                        actualizarMensajes(s);
+                    case "actualiza_lista":
+                        actualizaLista(s);
                 }
-            } else {
-                listaMensajes.clear();
-                new RequestAsync().execute("recibir_enviar");
             }
+        }
+    }
+
+    public void actualizarMensajes(String mensajes) {
+        try {
+            ArrayList<Mensaje> mensajesNuevos = new ArrayList<>();
+
+            // Cogemos el JSONObject del JSON file
+            JSONObject obj = new JSONObject(mensajes);
+
+            // Creamos un objeto Dato para guardar la respuesta principal de la petición.
+            JSONArray datos = obj.getJSONArray("dades");
+
+            Dato dato = new Dato(null, obj.getBoolean("correcta"), obj.getString("missatge"), obj.getInt("rowcount"));
+
+            // Usamos el dato básico de correcta que nos envia el servidor,
+            // si es true significa que la petición contiene todos los datos que hemos pedido.
+            if (dato.isCorrecta()) {
+                // Usamos un for para conseguir los datos
+                for (int i = 0; i < datos.length(); i++) {
+                    // Conseguimos la array principal que es la de dades, esta contiene la información
+                    // del mensaje
+                    JSONObject mensaje = datos.getJSONObject(i);
+
+                    // Asignamos cada campo a nuestra ArrayList
+                    mensajesNuevos.add(new Mensaje(mensaje.getString("codimissatge"), mensaje.getString("msg"),
+                            mensaje.getString("datahora"), mensaje.getString("codiusuari"),
+                            mensaje.getString("nom"), mensaje.getString("foto")));
+
+                }
+                if (guardaMensajesBBDD(mensajesNuevos)) {
+                    new RequestAsync().execute("actualiza_lista");
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void actualizaLista(String s) {
+        try {
+            // Cogemos el JSONObject del JSON file
+            JSONObject obj = new JSONObject(s);
+            // Creamos un objeto Dato para guardar la respuesta principal de la petición.
+            JSONArray datos = obj.getJSONArray("dades");
+
+            Dato dato = new Dato(null, obj.getBoolean("correcta"), obj.getString("missatge"), obj.getInt("rowcount"));
+
+            // Usamos el dato básico de correcta que nos envia el servidor,
+            // si es true significa que la petición contiene todos los datos que hemos pedido.
+            if (dato.isCorrecta()) {
+                // Usamos un for para conseguir los datos
+                for (int i = 0; i < datos.length(); i++) {
+                    // Conseguimos la array principal que es la de dades, esta contiene la información
+                    // del mensaje
+                    JSONObject mensaje = datos.getJSONObject(i);
+
+                    // Asignamos cada campo a nuestra ArrayList
+                    listaMensajes.add(new Mensaje(mensaje.getString("codimissatge"), mensaje.getString("msg"),
+                            mensaje.getString("datahora"), mensaje.getString("codiusuari"),
+                            mensaje.getString("nom"), mensaje.getString("foto")));
+
+                }
+
+                adapter.notifyDataSetChanged();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void cargarMensajesRecibidos(String mensajes) {
+        try {
+            // Cogemos el JSONObject del JSON file
+            JSONObject obj = new JSONObject(mensajes);
+
+            // Creamos un objeto Dato para guardar la respuesta principal de la petición.
+            JSONArray datos = obj.getJSONArray("dades");
+
+            Dato dato = new Dato(null, obj.getBoolean("correcta"), obj.getString("missatge"), obj.getInt("rowcount"));
+
+            // Usamos el dato básico de correcta que nos envia el servidor,
+            // si es true significa que la petición contiene todos los datos que hemos pedido.
+            if (dato.isCorrecta()) {
+                // Usamos un for para conseguir los datos
+                for (int i = 0; i < datos.length(); i++) {
+                    // Conseguimos la array principal que es la de dades, esta contiene la información
+                    // del mensaje
+                    JSONObject mensaje = datos.getJSONObject(i);
+
+                    // Asignamos cada campo a nuestra ArrayList
+                    listaMensajes.add(new Mensaje(mensaje.getString("codimissatge"), mensaje.getString("msg"),
+                            mensaje.getString("datahora"), mensaje.getString("codiusuari"),
+                            mensaje.getString("nom"), mensaje.getString("foto")));
+                }
+
+                ListView lista = findViewById(R.id.lista);
+                adapter = new CustomAdapter(getApplicationContext(), listaMensajes);
+                lista.setAdapter(adapter);
+            } else {
+                Toast.makeText(getApplicationContext(), "No hay mensajes", Toast.LENGTH_LONG).show();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
@@ -218,8 +269,23 @@ public class ChatActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("datos_login", MODE_PRIVATE);
         Gson gson = new Gson();
         String json = sharedPreferences.getString("usuario", null);
-        Type type = new TypeToken<Usuario>() {}.getType();
+        Type type = new TypeToken<Usuario>() {
+        }.getType();
         return gson.fromJson(json, type);
     }
-}
 
+    public boolean guardaMensajesBBDD(ArrayList<Mensaje> mensajes) {
+        for (Mensaje m : mensajes) {
+            bd = new DBInterface(getApplicationContext());
+            bd.abre();
+            if (bd.insertarMensaje((new Mensaje(m.getCodigoMensaje(), m.getContenido(), m.getFechaHora(),
+                    m.getCodigoUsuario(), m.getNombreUsuario(), m.getFoto())))) {
+                Log.d("Insertar mensaje", "Mensaje insertado");
+            } else {
+                Log.d("Insertar mensaje", "El mensaje ya está en la BBDD.");
+            }
+            bd.cierra();
+        }
+        return true;
+    }
+}

@@ -47,11 +47,6 @@ public class LoginActivity extends AppCompatActivity {
         pass = findViewById(R.id.login_password);
         btnLogin = findViewById(R.id.boton_login);
 
-        // Comprobar conexión
-        if (internetIsConnected()) {
-            Toast.makeText(getApplicationContext(), "Hay conexión", Toast.LENGTH_SHORT).show();
-        }
-
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -66,19 +61,6 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-    }
-
-    /**
-     * Ping a google para comprobar nuestra conexión a internet.
-     * @return True o False dependiendo de si hay conexión.
-     */
-    public boolean internetIsConnected() {
-        try {
-            String command = "ping -c 1 google.com";
-            return (Runtime.getRuntime().exec(command).waitFor() != 0);
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     /**
@@ -112,7 +94,7 @@ public class LoginActivity extends AppCompatActivity {
                 parametros.put("email", emailEnvia);
                 parametros.put("password", passEnvia);
 
-                return gestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/login/", parametros);
+                return gestorBBDD.loguear("http://52.44.95.114/quepassaeh/server/public/login/", parametros);
             }
             catch(Exception e){
                 return "Excepción: " + e.getMessage();
@@ -141,8 +123,6 @@ public class LoginActivity extends AppCompatActivity {
                         usuario.setPassword(passEnvia);
                         // Le añadimos a nuestro objeto Dato la información que nos faltaba
                         datos.setObjeto(usuario);
-
-                        System.out.println(usuario);
 
                         // Guardamos los datos con Shared Preferences
                         guardarDatosLogin(usuario);

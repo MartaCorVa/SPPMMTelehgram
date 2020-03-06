@@ -1,9 +1,15 @@
 package cat.paucasesnoves.telehgram;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -24,14 +30,18 @@ import cat.paucasesnoves.telehgram.gestor.GestorBBDD;
 public class LoginAutomatico extends AppCompatActivity {
 
     private GestorBBDD gestorBBDD;
-    private Usuario usuario;
+    private Usuario user;
+    private ReceptorXarxa receptor;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         gestorBBDD = new GestorBBDD();
-        obtenDatosLogin();
+
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        receptor = new ReceptorXarxa();
+        this.registerReceiver(receptor, filter);
     }
 
     public void obtenDatosLogin() {
@@ -39,9 +49,9 @@ public class LoginAutomatico extends AppCompatActivity {
         Gson gson = new Gson();
         String json = sharedPreferences.getString("usuario", null);
         Type type = new TypeToken<Usuario>() {}.getType();
-        usuario = gson.fromJson(json, type);
+        user = gson.fromJson(json, type);
 
-        if (usuario == null) {
+        if (user == null) {
             startActivity(new Intent(this, LoginActivity.class));
         } else {
             new RequestAsync().execute();
@@ -60,10 +70,10 @@ public class LoginAutomatico extends AppCompatActivity {
                 // POST para el login
                 JSONObject parametros = new JSONObject();
                 // Añadimos los parámetros a un JSONObject
-                parametros.put("email", usuario.getEmail());
-                parametros.put("password", usuario.getPassword());
+                parametros.put("email", user.getEmail());
+                parametros.put("password", user.getPassword());
 
-                return gestorBBDD.enviarPost("http://52.44.95.114/quepassaeh/server/public/login/", parametros);
+                return gestorBBDD.loguear("http://52.44.95.114/quepassaeh/server/public/login/", parametros);
             }
             catch(Exception e){
                 return "Excepción: " + e.getMessage();
@@ -89,9 +99,17 @@ public class LoginAutomatico extends AppCompatActivity {
                         // Asignamos cada campo a nuestro objeto Usuario
                         Usuario usuario = new Usuario(descarga.getString("codiusuari"), descarga.getString("nom"),
                                 descarga.getString("email"), descarga.getString("token"));
-                        usuario.setPassword(usuario.getPassword());
+
+                        usuario.setPassword(user.getPassword());
+
                         // Le añadimos a nuestro objeto Dato la información que nos faltaba
                         datos.setObjeto(usuario);
+
+                        // Borramos el Shared antiguo
+                        borrarShared();
+
+                        // Guardar usuario en el Shared
+                        guardarDatosLogin(usuario);
 
                         // Redirigimos a la activity de chat
                         startActivity(new Intent(getApplicationContext(), ChatActivity.class));
@@ -106,4 +124,59 @@ public class LoginAutomatico extends AppCompatActivity {
         }
     }
 
+    public void borrarShared() {
+        this.getSharedPreferences("datos_login", 0).edit().clear().apply();
+        Log.d("Actualiza Shared", "Shared eliminado.");
+    }
+
+    /**
+     * Método para guardar todos los datos de un usuario en un xml
+     * @param usuario
+     */
+    public void guardarDatosLogin(Usuario usuario) {
+        SharedPreferences sharedPreferences = getSharedPreferences("datos_login", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        Gson gson = new Gson();
+        String json = gson.toJson(usuario);
+        editor.putString("usuario", json);
+        editor.apply();
+    }
+
+    /**
+     * Ping a google para comprobar nuestra conexión a internet.
+     * @return True o False dependiendo de si hay conexión.
+     */
+    public void internetIsConnected(Context context) {
+        //Obtenim un gestor de les connexions de xarxa
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        //Obtenim l’estat de la xarxa
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        //Si està connectat
+        if (networkInfo != null && networkInfo.isConnected()) {
+            Toast.makeText(getApplicationContext(), "Hay conexión", Toast.LENGTH_SHORT).show();
+            obtenDatosLogin();
+        } else {
+            Toast.makeText(getApplicationContext(), "No hay conexión", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, OfflineActivity.class));
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        //Donam de baixa el receptor de broadcast quan es destrueix l’aplicació
+        if (receptor != null) {
+            this.unregisterReceiver(receptor);
+        }
+    }
+
+    public class ReceptorXarxa extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            //Actualitza l'estat de la xarxa
+            internetIsConnected(context);
+        }
+    }
 }
